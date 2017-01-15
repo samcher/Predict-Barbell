@@ -1,0 +1,74 @@
+---
+title: "predict_lifts.R"
+author: "DC"
+date: "January 8, 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(caret)
+library(randomForest)
+setwd("C:/coursera/practical machine learning/week4/")
+```
+
+## Synopsis
+
+Data from devices like Jawbone Up and Fitbit can be used to determine the type of activity that people do. In this machine learning algorithm the quality of barbell lifting from activity monitors is predicted. The model is built on data collected from accelerometers on the belt, forearm, arm, and dumbbell of 6 participants while they performed barbell lifting exercise in five different fashions. More information about the experimental design and data collection is available on the Human Activity Recognition website and the paper by Velloso, E. et al, 2013.
+
+## Loading Data
+
+
+```{r }
+pml_training <- read.csv("data/pml-training.csv", na.strings = c("NA","")) # set "" equal to NA
+pml_testing <- read.csv("data/pml-testing.csv", na.strings = c("NA",""))
+head(pml_training[,1:15])
+str(pml_training[,1:15])
+summary(pml_training$classe)
+```
+
+## Data Processing
+There are 5 possible outcomes of the prediction (the "classe" variable in the training dataset): (A) exactly according to the specification; (B) throwing the elbows to the front; (C) lifting the dumbbell only halfway; (D) lowering the dumbbell only halfway; (E) throwing the hips to the front. Class A corresponds to the correct execution of the exercise, while the other 4 classes correspond to common mistakes. The goal of the prediction algorithm is to identify whether the dumbbell lifting was performed correctly (Class A) or identify the mistake (Classes B to E).
+
+The accuracy of the prediction algorithm will be evaluated on each row of the pml_testing dataset. Since the username, timestamps and the "window" features are irrelevant those are removed. The first 7 columns in both datasets since those variables will not be used as predictors.
+
+```{r }
+pml_training <- pml_training[, -(1:7)]
+pml_testing <- pml_testing[, -(1:7)]
+```
+
+
+## Removing Null columns
+There are several other variables which have lots of NA's(nacols ). These variables are removed to obtain a clean training dataset. Corresponding changes are even made to the final test dataset. 
+
+
+```{r}
+nacols <- c(NULL)
+for(i in 1:length(pml_training)) nacols[i] <- sum(is.na(pml_training[,i]))>5000
+
+pml_training <- pml_training[!nacols]
+pml_testing <- pml_testing[!nacols]
+```
+
+##Fitting a model
+
+A random forest algorithm is used on the training data to build our model and the predictions are made on the testing data. The cross validation resulted in a good accuracy of 99.78%, which means that the out of sample error rate(OOB) of the model is 0.28%. 
+
+```{r}
+mod1 <- randomForest(classe~.,data=pml_training)
+mod1
+
+```
+
+##Predicting the final test data
+
+```{r}
+pred <- predict(mod1,pml_testing,type="class")
+pred
+```
+
+### Results in the Project Quiz
+
+Quiz results: I got 20/20 correct, which confirms the out-of-sample error rate is indeed quite low (r err_modrf).
+
